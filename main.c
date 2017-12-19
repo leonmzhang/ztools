@@ -30,10 +30,14 @@ void read_sector(const char *path)
         buf_ptr += ret;
     }
 
+    int a = 0;
     for(int i = 0; i < SECTOR_SIZE; i++)
     {
         printf("%02x ", buf[i]);
+        if((++a % 16) == 0)
+            printf("\n");
     }
+    printf("\n");
 
     close(fd);
 
