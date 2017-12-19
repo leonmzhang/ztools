@@ -10,13 +10,14 @@ void read_sector(const char *path)
     int fd;
     int buf_len = SECTOR_SIZE;
     char buf[buf_len];
+    char *buf_ptr = buf;
     ssize_t ret;
 
     fd = open(path, O_RDONLY);
     if(fd == -1)
         printf("open file failed.");
 
-    while( buf_len !=0 && (ret = read(fd, buf, buf_len)) != 0 )
+    while( buf_len !=0 && (ret = read(fd, buf_ptr, buf_len)) != 0 )
     {
         if(ret == -1)
         {
@@ -25,6 +26,8 @@ void read_sector(const char *path)
             printf("read");
             break;
         }
+        buf_len -= ret;
+        buf_ptr += ret;
     }
 
     for(int i = 0; i < SECTOR_SIZE; i++)
