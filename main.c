@@ -1,9 +1,38 @@
 #include <stdio.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <errno.h>
 
+#define SECTOR_SIZE 512
 
 void read_sector(const char *path)
 {
-    
+    int fd;
+    int buf_len = SECTOR_SIZE;
+    char buf[buf_len];
+    ssize_t ret;
+
+    fd = open(path, O_RDONLY);
+    if(fd == -1)
+        printf("open file failed.");
+
+    while( buf_len !=0 && (ret = read(fd, buf, buf_len)) != 0 )
+    {
+        if(ret == -1)
+        {
+            if(errno == EINTR)
+                continue;
+            printf("read");
+            break;
+        }
+    }
+
+    for(int i = 0; i < SECTOR_SIZE; i++)
+    {
+        printf("%02x ", buf[i]);
+    }
+
+    close(fd);
 
     return;
 }
