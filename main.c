@@ -17,7 +17,7 @@ void read_sector(const char *path)
     if(fd == -1)
         printf("open file failed.");
 
-    while( buf_len !=0 && (ret = read(fd, buf_ptr, buf_len)) != 0 )
+    while( buf_len != 0 && (ret = read(fd, buf_ptr, buf_len)) != 0 )
     {
         if(ret == -1)
         {
@@ -30,11 +30,10 @@ void read_sector(const char *path)
         buf_ptr += ret;
     }
 
-    int a = 0;
     for(int i = 0; i < SECTOR_SIZE; i++)
     {
-        printf("%02x ", buf[i]);
-        if((++a % 16) == 0)
+        printf("%02x ", (unsigned char)buf[i]);
+        if(((i + 1) % 16) == 0)
             printf("\n");
     }
     printf("\n");
@@ -46,7 +45,8 @@ void read_sector(const char *path)
 
 int main()
 {
-    const char *disk = "/dev/sdc";
+    //const char *disk = "/dev/sdc";
+    const char *disk = "/dev/sdj";
 
     read_sector(disk);
 
