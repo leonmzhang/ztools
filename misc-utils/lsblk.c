@@ -20,16 +20,27 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+// TODO use gcc -include to add config.h
+#include "config.h"
+
 #include <stdio.h>
 #include <errno.h>
 #include <getopt.h>
 #include <stdlib.h>
+#include <string.h>
 #include <locale.h>
 #include <dirent.h>
 
+#include <assert.h>
+
+#include "c.h"
 #include "pathnames.h"
 #include "nls.h"
+#include "xalloc.h"
+#include "closestream.h"
 #include "optutils.h"
+
+#include "debug.h"
 
 /* basic table settings */
 enum {
@@ -52,16 +63,40 @@ static struct lsblk *lsblk; /* global handler */
 //static int columns[ARRAY_SIZE(infos) * 2];
 static size_t ncolumns;
 
-struct blkdev_ctx {
-    struct blkdev_ctx *parent;
+struct blkdev_cxt {
+    struct blkdev_cxt *parent;
+
+    // /sys/block 目录中设备内核名称, 如sda, sdb等
+    char *name;                 /* kernel name in /sys/block */
+
+    // 是否是分区 TRUE/FALSE
+    int partation;		/* is partition? TRUE/FALSE */
 };
 
 // 初始化Debug信息, 具体功能不确定, 先留个空
 static void lsblk_init_debug(void)
 {
 
-    // 是否是分区 TRUE/FALSE
-    int partation;		/* is partition? TRUE/FALSE */
+}
+
+/**
+ * readdir的封装, 去除了"."和".."目录
+ */
+static struct dirent *xreaddir(DIR *dp)
+{
+    struct dirent *d;
+    
+    assert(dp);
+    
+    while ((d = readdir(dp))) {
+        if (!strcmp(d->d_name, ".") ||
+            !strcmp(d->d_name, ".."))
+            continue;
+        
+        /* blacklist here ? */
+        break;
+    }
+    return d;
 }
 
 // 核心功能函数, 迭代快设备
@@ -72,12 +107,16 @@ static int iterate_block_devices(void)
     DIR *dir;
     struct dirent *d;
     // 自定义类型
-    struct blkdev_ctx ctx = { NULL };
+    struct blkdev_cxt cxt = { NULL };
 
     // 打开/sys/block目录
     if (!(dir = opendir(_PATH_SYS_BLOCK))) {
         return -errno;
     }
+
+    closedir(dir);
+
+    return 0;
 }
 
 static void check_sysdevblock(void)
@@ -93,6 +132,7 @@ int main(int argc, char *argv[])
     size_t i;
     int force_tree = 0;
 
+    // 设置支持的参数
     static const struct option longopts[] = {
         { "all",     no_argument, NULL, 'a' },
         { "bytes",   no_argument, NULL, 'b' }
@@ -103,10 +143,10 @@ int main(int argc, char *argv[])
    
     // 这段代码貌似对主要功能没有影响, 先注释掉 
     // 地域设置, 第二个参数为""代表设置成当前系统的区域
-    /*setlocale(LC_ALL, "");
+    setlocale(LC_ALL, "");
     bindtextdomain(PACKAGE, LOCALEDIR);
     textdomain(PACKAGE);
-    atexit(close_stdout);*/
+    atexit(close_stdout);
 
     lsblk = &_ls;
 
@@ -121,7 +161,9 @@ int main(int argc, char *argv[])
             lsblk->all_devices = 1;
             break;
 
-
+        case 'V':
+            printf(UTIL_LINUX_VERSION);
+            return EXIT_SUCCESS;
         }
     }
 
@@ -135,5 +177,9 @@ int main(int argc, char *argv[])
     if (!ncolumns) {
 
     }
+
+
+    // 输出结果
+    //scols_print_table(lsblk->table);
 }
 

@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.7)
 project(ztools)
 
+set(SLUTION_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../)
+
 set(MODULE_NAME misc-utils)
 
 set(MODULE_SRC_FILES
