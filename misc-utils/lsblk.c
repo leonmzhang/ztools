@@ -42,6 +42,23 @@
 
 #include "debug.h"
 
+/* column IDs */
+enum {
+    COL_NAME = 0,  // 名称 如sdb sdb1等
+
+    COL_MAJMIN,
+
+    COL_TARGET,
+
+    COL_RO,
+    COL_RM,
+
+    COL_SIZE,
+
+    COL_TYPE,
+
+};
+
 /* basic table settings */
 enum {
     LSBLK_TREE = (1 << 4),
@@ -60,8 +77,21 @@ struct lsblk {
 
 // 全局句柄, 目前还不知道做什么用的
 static struct lsblk *lsblk; /* global handler */
-//static int columns[ARRAY_SIZE(infos) * 2];
+
+/* columns[] array specifies all currently wanted output column. The columns
+ * are defined by infos[] array and you can specify (on command line) each
+ * column twice. That's enough, dynamically allocated array of the columns is
+ * unnecessary overkill and over-engineering in this case */
+static int columns[ARRAY_SIZE(infos) * 2];
 static size_t ncolumns;
+
+static inline void add_column(int id)
+{
+    if (ncolumns >= ARRAY_SIZE(columns))
+        errx(EXIT_FAILURE, _("too many columns specified, "
+            "the limit is %zu columns"), ARRAY_SIZE(columns) - 1);
+    columns[ ncolumns++ ] =  id;
+}
 
 struct blkdev_cxt {
     struct blkdev_cxt *parent;
@@ -152,7 +182,7 @@ int main(int argc, char *argv[])
 
     lsblk_init_debug();
     
-    // 下面就是根据输入参数设置变量
+    // 下面就是根据输入参数设置列, 如果没有参数, 直接跳过该while循环
     // getopt_long定义在getopt.h中
     while((c = getopt_long(argc, argv, 
             "abdDze:fhJlnmo:OpPiI:rstVSTx:", longopts, NULL)) != -1) {
@@ -175,7 +205,13 @@ int main(int argc, char *argv[])
 
     // 如果列没有设置, 设置默认的列
     if (!ncolumns) {
-
+        add_column(COL_NAME);
+        add_column(COL_MAJMIN);
+        add_column(COL_RM);
+        add_column(COL_SIZE);
+        add_column(COL_RO);
+        add_column(COL_TYPE);
+        add_column(COL_TARGET);
     }
 
 

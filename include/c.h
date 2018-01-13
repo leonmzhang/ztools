@@ -9,8 +9,6 @@
 #include <unistd.h>
 #include <string.h>
 
-#include <libintl.h>
-
 #ifdef HAVE_ERR_H
 # include <err.h>
 #endif
