@@ -6,7 +6,8 @@
 #ifndef PATHNAMES_H
 #define PATHNAMES_H
 
-#define _PATH_SYS_BLOCK		"/sys/block"
+#define _PATH_SYS_BLOCK        "/sys/block"
+#define _PATH_SYS_DEVBLOCK     "/sys/dev/block"
 
 #endif /* PATHNAMES_H */ 
 

@@ -31,12 +31,15 @@
 #include <locale.h>
 #include <dirent.h>
 
+#include <libsmartcols.h>
+
 #include <assert.h>
 
 #include "c.h"
 #include "pathnames.h"
 #include "nls.h"
 #include "xalloc.h"
+#include "strutils.h"
 #include "closestream.h"
 #include "optutils.h"
 
@@ -46,12 +49,12 @@
 enum {
     COL_NAME = 0,  // 名称 如sdb sdb1等
 
-    COL_MAJMIN,
+    COL_MAJMIN,    // 如8:0 8:16等
 
-    COL_TARGET,
+    COL_TARGET,  
 
-    COL_RO,
-    COL_RM,
+    COL_RO,        // 只读设备
+    COL_RM,        // 可移除设备
 
     COL_SIZE,
 
@@ -62,6 +65,39 @@ enum {
 /* basic table settings */
 enum {
     LSBLK_TREE = (1 << 4),
+};
+
+
+enum {
+    SORT_STRING	= 0,	/* default is to use scols_cell_get_data() */
+    SORT_U64	= 1	/* use private pointer from scols_cell_get_userdata() */
+};
+
+/* column names */
+struct colinfo {
+    const char   *name;         /* header */
+    /* 宽度提示, N < 1代表终端宽度的百分比 */
+    double        whint;        /* width hint (N < 1 is in percent of termwidth) */
+    int           flags;        /* SCOLS_FL_* */
+    const char   *help;
+    
+    int           sort_type;    /* SORT_* */
+};
+
+/* columns descriptions */
+static struct colinfo infos[] = {
+    [COL_NAME]   = { "NAME",    0.25, SCOLS_FL_TREE | SCOLS_FL_NOEXTREMES, N_("device name") },
+
+    [COL_MAJMIN] = { "MAJ:MIN", 6, 0, N_("major:minor device number"), SORT_U64 },
+
+    [COL_TARGET] = { "MOUNTPOINT", 0.10, SCOLS_FL_TRUNC, N_("where the device is mounted") },
+
+    [COL_RO]     = { "RO",      1, SCOLS_FL_RIGHT, N_("read-only device") },
+    [COL_RM]     = { "RM",      1, SCOLS_FL_RIGHT, N_("removable device") },
+
+    [COL_SIZE]   = { "SIZE",    5, SCOLS_FL_RIGHT, N_("size of the device"), SORT_U64 },
+
+    [COL_TYPE]   = { "TYPE",    4, 0, N_("device type") },
 };
 
 struct lsblk {
@@ -78,6 +114,10 @@ struct lsblk {
 // 全局句柄, 目前还不知道做什么用的
 static struct lsblk *lsblk; /* global handler */
 
+/* columns[] 数组指定所有当前想要输出的列. 
+ * overkill矫枉过正
+ * columns的大小是infos数组的两倍 
+ */
 /* columns[] array specifies all currently wanted output column. The columns
  * are defined by infos[] array and you can specify (on command line) each
  * column twice. That's enough, dynamically allocated array of the columns is
@@ -149,9 +189,12 @@ static int iterate_block_devices(void)
     return 0;
 }
 
+/* 检查/sys/dev/block是否可读 */
 static void check_sysdevblock(void)
 {
-
+    if (access(_PATH_SYS_DEVBLOCK, R_OK) != 0)
+        err(EXIT_FAILURE, _("failed to access sysfs directory: %s"),
+                _PATH_SYS_DEVBLOCK);
 }
 
 int main(int argc, char *argv[])
@@ -205,6 +248,7 @@ int main(int argc, char *argv[])
 
     // 如果列没有设置, 设置默认的列
     if (!ncolumns) {
+        // add_column 会修改ncolumns的值, 每增加一个加1
         add_column(COL_NAME);
         add_column(COL_MAJMIN);
         add_column(COL_RM);
@@ -214,8 +258,37 @@ int main(int argc, char *argv[])
         add_column(COL_TARGET);
     }
 
+    // 没有参数时 outarg 为NULL, 该段语句不执行
+    /*
+    if (outarg && string_add_to_idarray(outarg, columns, ARRAY_SIZE(columns), 
+            &ncolumns, column_name_to_id) < 0)
+        return EXIT_FAILURE;
+    */
+
+    // main函数中lsblk->初始赋值为-1 如果没有传入参数, 不会改变该值
+    if (lsblk->sort_id < 0)
+        /* Since Linux 4.8 we have sort devices by default, because
+ 	 * /sys is no more sorted */
+        lsblk->sort_id = COL_MAJMIN;
+
+    /* For --inverse --list we still follow parent->child relation */
+    /* 没有参数时, 该段语句不执行
+    if (lsblk->inverse && !(lsblk->flags & LSBLK_TREE))
+        lsblk->force_tree_order = 1;
+    */
+
+    /* 没有参数是, 该段语句不执行 */
+    /*
+    if (lsblk->sort_id >= 0 && column_id_to_number(lsblk->sort_id) < 0) {
+        / * the sort column is not between output columns -- add as hidden * /
+        add_column(lsblk->sort_id);
+        lsblk->sort_hidden = 1;
+    }
+    */
 
     // 输出结果
     //scols_print_table(lsblk->table);
+
+    return status;
 }
 

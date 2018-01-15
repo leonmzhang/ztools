@@ -16,6 +16,7 @@
 #ifdef __GNUC__
 
 /* &a[0] degrades to a pointer: a different type from an array */
+/* __builtin_types_compatible_p 是gcc内部定义的内联函数*/
 # define __must_be_array(a) \
     UL_BUILD_BUG_ON_ZERO(__builtin_types_compatible_p(__typeof__(a), __typeof__(&a[0])))
 
@@ -33,6 +34,9 @@
  */
 #define UL_BUILD_BUG_ON_ZERO(e) __extension__ (sizeof(struct { int:-!!(e); }))
 
+/*
+ * 最后加的一项"__must_be_array"如果为数组则为0, 如果不为数组, 编译出错
+ */
 #ifndef ARRAY_SIZE
 # define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]) + __must_be_array(arr))
 #endif
