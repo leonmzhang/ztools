@@ -169,7 +169,7 @@ static struct dirent *xreaddir(DIR *dp)
     return d;
 }
 
-// 核心功能函数, 迭代快设备
+// 核心功能函数, 迭代块设备
 /* Iterate devices in sysfs */
 static int iterate_block_devices(void)
 {

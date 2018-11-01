@@ -43,12 +43,32 @@ void read_sector(const char *path)
     return;
 }
 
+
+typedef int ul_excl_t[16];
+
+#define UL_BUILD_BUG_ON_ZERO(e) __extension__ (sizeof(struct { int:-!!(e); }))
+
 int main()
 {
     //const char *disk = "/dev/sdc";
     const char *disk = "/dev/sdj";
+    //read_sector(disk);
 
-    read_sector(disk);
+    struct s_t {
+        char *des;
+        int id;
+    };
+
+    struct s_t s[] = {
+        [0] = {"index: 0", 0},
+        [1] = {"index: 1", 1},
+        [5] = {"index: 5", 5}
+    };
+
+    /*printf("%s\n", s[3].des);
+    printf("%s\n", s[5].des);*/
+
+    printf("%d\n", 1 << 4);
 
     return 0;
 }
