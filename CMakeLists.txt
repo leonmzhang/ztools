@@ -11,8 +11,8 @@ include_directories(
 )
 
 #add_compile_options("-std=c99")
-add_compile_options("-std=gnu99")
-add_compile_options("-g3")
+add_compile_options("-std=gnu99" "-g")
+#add_compile_options("-g3")
 #add_compile_options("-DPACKAGE='util-linux'")
 #add_compile_options("-DPACKAGE_STRING='util-linux UNKNOWN'")
 #add_compile_options("-include config.h")
@@ -22,3 +22,4 @@ add_compile_options("-g3")
 #add_executable(ztool ${SOURCE_FILES})
 
 add_subdirectory(${SLUTION_DIR}/misc-utils/)
+add_subdirectory(${SLUTION_DIR}/crc-test/)
